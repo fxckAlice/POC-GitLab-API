@@ -9,7 +9,7 @@ import org.poc.gitlabapiclient.gitlabapi.data.enteties.Member;
 import org.poc.gitlabapiclient.gitlabapi.data.enteties.MergeRequest;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,31 +35,33 @@ public class ObjectsCompressingService {
     private Branch compressBranch(JsonNode bigBranch) {
         return new Branch(
                 bigBranch.get("name").asText(),
-                compressCommit(bigBranch.get("last_commit")),
+                compressCommit(bigBranch.get("commit")),
                 bigBranch.get("web_url").asText()
         );
     }
     private Commit compressCommit(JsonNode bigCommit) {
+        String createdAt = bigCommit.get("created_at").asText();
         return new Commit(
                 bigCommit.get("short_id").asText(),
                 bigCommit.get("author_name").asText(),
                 bigCommit.get("message").asText(),
-                LocalDateTime.parse(bigCommit.get("created_at").asText()),
+                OffsetDateTime.parse(createdAt),
                 bigCommit.get("web_url").asText()
         );
     }
     @SuppressWarnings("all")
     private MergeRequest compressMergeRequest(JsonNode bigMergeRequest) {
         String mergedAt = bigMergeRequest.get("merged_at").asText();
+        String created_at = bigMergeRequest.get("created_at").asText();
         return new MergeRequest(
                 bigMergeRequest.get("id").asInt(),
                 bigMergeRequest.get("iid").asInt(),
-                compressMember(bigMergeRequest.get("author")),
+                bigMergeRequest.get("author").get("id").asInt(),
                 bigMergeRequest.get("title").asText(),
                 bigMergeRequest.get("state").asText(),
                 bigMergeRequest.get("target_branch").asText(),
-                LocalDateTime.parse(bigMergeRequest.get("created_at").asText()),
-                (mergedAt != null || !mergedAt.equals("")) ? LocalDateTime.parse(mergedAt) : null,
+                OffsetDateTime.parse(created_at),
+                (mergedAt != null && !mergedAt.equals("null")) ? OffsetDateTime.parse(mergedAt) : null,
                 bigMergeRequest.get("web_url").asText()
         );
     }

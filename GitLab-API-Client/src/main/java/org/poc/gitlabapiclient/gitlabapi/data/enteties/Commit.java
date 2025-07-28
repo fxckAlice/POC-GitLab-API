@@ -1,12 +1,12 @@
 package org.poc.gitlabapiclient.gitlabapi.data.enteties;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record Commit(
         String shortId,
         String author,
         String message,
-        LocalDateTime createdAt,
+        OffsetDateTime createdAt,
         String webUrl
 ) {
 }

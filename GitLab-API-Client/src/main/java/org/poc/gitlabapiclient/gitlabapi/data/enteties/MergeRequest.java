@@ -1,16 +1,16 @@
 package org.poc.gitlabapiclient.gitlabapi.data.enteties;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record MergeRequest(
         int id,
         int iid,
-        Member author,
+        int authorId,
         String title,
         String state,
         String targetBranch,
-        LocalDateTime createdAt,
-        LocalDateTime mergedAt,
+        OffsetDateTime createdAt,
+        OffsetDateTime mergedAt,
         String webUrl
 ) {
 }
