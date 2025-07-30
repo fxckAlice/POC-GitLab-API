@@ -26,6 +26,7 @@ public class ApiTokenAuthFilter extends OncePerRequestFilter {
         this.gitLabTokenConfig = gitLabTokenConfig;
     }
 
+    @SuppressWarnings("all")
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
