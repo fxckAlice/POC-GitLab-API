@@ -21,7 +21,7 @@ public class TestGitApiClientService {
     private RestTemplate restTemplate;
 
     private GitLabApiClientService gitLabApiClientService;
-
+    @SuppressWarnings("all")
     private final String protocol = "http://";
     private final String host = "test-host";
 
@@ -51,6 +51,90 @@ public class TestGitApiClientService {
         assertEquals(expectedResponse, actualResponse);
         System.out.println(actualResponse);
     }
+    @Test
+    void testGetMRsAll() {
+        String expectedResponse = "[{id: 1, title: \"Test MR 1\"}, {id: 2, title: \"Test MR 2\"}]";
+        String url = protocol + host + "/gateway/merge-requests/all";
+        when(restTemplate.exchange(
+                eq(url),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(String.class)
+        )).thenReturn(new ResponseEntity<>(expectedResponse, HttpStatus.OK));
+
+        String actualResponse = gitLabApiClientService.getMRsAll();
+
+        assertEquals(expectedResponse, actualResponse);
+        System.out.println(actualResponse);
+    }
+    @Test
+    void testGetMRsByAuthorId() {
+        String expectedResponse = "[{id: 1, title: \"Test MR 1\"}, {id: 2, title: \"Test MR 2\"}]";
+        long authorId = 1;
+        String url = protocol + host + "/gateway/merge-requests?author_id=" + authorId;
+        when(restTemplate.exchange(
+                eq(url),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(String.class)
+        )).thenReturn(new ResponseEntity<>(expectedResponse, HttpStatus.OK));
+
+        String actualResponse = gitLabApiClientService.getMRsByAuthorId(authorId);
+
+        assertEquals(expectedResponse, actualResponse);
+        System.out.println(actualResponse);
+    }
+    @Test
+    void testGetBranchesAll() {
+        String expectedResponse = "[{id: 1, name: \"test-branch\"}, {id: 2, name: \"main\"}]";
+        String url = protocol + host + "/gateway/branches/all";
+        when(restTemplate.exchange(
+                eq(url),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(String.class)
+        )).thenReturn(new ResponseEntity<>(expectedResponse, HttpStatus.OK));
+
+        String actualResponse = gitLabApiClientService.getBranchesAll();
+
+        assertEquals(expectedResponse, actualResponse);
+        System.out.println(actualResponse);
+    }
+    @Test
+    void testGetCommitsByMergeRequestIid() {
+        String expectedResponse = "[{id: 1, message: \"Test commit 1\"}, {id: 2, message: \"Test commit 2\"}]";
+        long mergeRequestId = 1;
+        String url = protocol + host + "/gateway/commits/mr?mr_iid=" + mergeRequestId;
+        when(restTemplate.exchange(
+                eq(url),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(String.class)
+        )).thenReturn(new ResponseEntity<>(expectedResponse, HttpStatus.OK));
+
+        String actualResponse = gitLabApiClientService.getCommitsByMergeRequestIid(mergeRequestId);
+
+        assertEquals(expectedResponse, actualResponse);
+        System.out.println(actualResponse);
+    }
+    @Test
+    void testGetCommitsByBranchName() {
+        String expectedResponse = "[{id: 1, message: \"Test commit 1\"}, {id: 2, message: \"Test commit 2\"}]";
+        String branchName = "test-branch";
+        String url = protocol + host + "/gateway/commits/branch?branch_name=" + branchName;
+        when(restTemplate.exchange(
+                eq(url),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(String.class)
+        )).thenReturn(new ResponseEntity<>(expectedResponse, HttpStatus.OK));
+
+        String actualResponse = gitLabApiClientService.getCommitsByBranchName(branchName);
+
+        assertEquals(expectedResponse, actualResponse);
+        System.out.println(actualResponse);
+    }
+
     private static void setField(Object target, String fieldName, Object value) {
         try {
             var field = target.getClass().getDeclaredField(fieldName);

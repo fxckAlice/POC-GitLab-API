@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @Service
 public class GitLabApiClientService {
@@ -21,7 +22,9 @@ public class GitLabApiClientService {
     public GitLabApiClientService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
-    private String fetch(String url, HttpHeaders headers){
+    private String fetch(String url){
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Authorization", "Bearer " + token);
         HttpEntity<String> entity = new HttpEntity<>(headers);
         ResponseEntity<String> response = restTemplate.exchange(
                 url,
@@ -33,8 +36,33 @@ public class GitLabApiClientService {
     }
     public String getMembers(){
         String url = protocol + host + "/gateway/members/all";
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + token);
-        return fetch(url, headers);
+        return fetch(url);
     }
+    public String getMRsAll(){
+        String url = protocol + host + "/gateway/merge-requests/all";
+        return fetch(url);
+    }
+    public String getMRsByAuthorId(long authorId){
+        String url = UriComponentsBuilder.fromUriString(protocol + host + "/gateway/merge-requests")
+                .queryParam("author_id", authorId)
+                .toUriString();
+        return fetch(url);
+    }
+    public String getBranchesAll(){
+        String url = protocol + host + "/gateway/branches/all";
+        return fetch(url);
+    }
+    public String getCommitsByMergeRequestIid(long mergeRequestId){
+        String url = UriComponentsBuilder.fromUriString(protocol + host + "/gateway/commits/mr")
+                .queryParam("mr_iid", mergeRequestId)
+                .toUriString();
+        return fetch(url);
+    }
+    public String getCommitsByBranchName(String branchName){
+        String url = UriComponentsBuilder.fromUriString(protocol + host + "/gateway/commits/branch")
+                .queryParam("branch_name", branchName)
+                .toUriString();
+        return fetch(url);
+    }
+
 }
