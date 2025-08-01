@@ -9,7 +9,7 @@ public class TestFileCommitAuthorMatcher {
     @Test
     void testMatch() {
         FileCommitAuthorMatcher matcher = new FileCommitAuthorMatcher();
-        long result = matcher.match("g0tmi1k@kali.org");
+        long result = matcher.matchEmail("g0tmi1k@kali.org");
         assertEquals(2410870, result);
     }
 }

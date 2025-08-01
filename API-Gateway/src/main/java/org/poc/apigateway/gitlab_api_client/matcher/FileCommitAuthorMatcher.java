@@ -8,7 +8,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FileCommitAuthorMatcher implements CommitAuthorMatcherInterface{
+public class FileCommitAuthorMatcher implements CommitAuthorMatcher {
     @Override
     public long matchEmail(String authorEmail) {
         ClassPathResource resource = new ClassPathResource("members.json");
@@ -59,5 +59,6 @@ public class FileCommitAuthorMatcher implements CommitAuthorMatcherInterface{
             System.out.println("File members.json found!");
         }
     }
+    public FileCommitAuthorMatcher() {}
 
 }
