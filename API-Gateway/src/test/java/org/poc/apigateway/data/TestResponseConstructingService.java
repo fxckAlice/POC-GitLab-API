@@ -87,7 +87,6 @@ public class TestResponseConstructingService {
 
         when(fileCommitAuthorMatcher.matchId(2410870)).thenReturn("g0tmi1k@kali.org");
 
-
         List<Member> members = responseConstructingService.getMembers();
         Member firstMember = members.getFirst();
 
@@ -96,5 +95,21 @@ public class TestResponseConstructingService {
         assertEquals("g0tmi1k", firstMember.username());
         assertEquals("g0tmi1k@kali.org", firstMember.email());
         assertEquals(2, firstMember.createdMRs());
+    }
+
+    @Test
+    void testGetMemberByEmail() {
+        when(gitLabApiClientService.getMembers()).thenReturn(membersExample);
+        when(gitLabApiClientService.getMRsAll()).thenReturn(mrsExample);
+
+        when(fileCommitAuthorMatcher.matchEmail("gotmilk@kali.org")).thenReturn(2410870L);
+        when(fileCommitAuthorMatcher.matchId(2410870)).thenReturn("g0tmi1k@kali.org");
+
+        Member member = responseConstructingService.getMemberByEmail("gotmilk@kali.org");
+
+        assertEquals(2410870, member.id());
+        assertEquals("g0tmi1k", member.username());
+        assertEquals("g0tmi1k@kali.org", member.email());
+        assertEquals(2, member.createdMRs());
     }
 }
