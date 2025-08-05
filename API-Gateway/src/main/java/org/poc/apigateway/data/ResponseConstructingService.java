@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.poc.apigateway.entities.Branch;
+import org.poc.apigateway.entities.Commit;
 import org.poc.apigateway.entities.Member;
 import org.poc.apigateway.entities.MergeRequest;
 import org.poc.apigateway.gitlab_api_client.GitLabApiClientService;
@@ -225,5 +226,44 @@ public class ResponseConstructingService {
         }
         throw new IllegalArgumentException("Branch with name " + name + " not found");
     }
+    private List<Commit> getCommits(JsonNode commitsNode) {
+        JsonNode membersAll = parseJson(gitLabApiClientService.getMembers());
+        List<Commit> result = new ArrayList<>();
+        for (int i = 0; i < commitsNode.size(); i++) {
+            JsonNode commitNode = commitsNode.get(i) ;
+            String sha = commitNode.get("shortId").asText();
+            String authorEmail = commitNode.get("author").asText();
+            String uauthorUrl = "";
+            for (JsonNode memberNode : membersAll) {
+                if (memberNode.get("id").asLong() == fileCommitAuthorMatcher.matchEmail(authorEmail)) {
+                    uauthorUrl = memberNode.get("webUrl").asText();
+                    break;
+                }
+            }
+            String message = commitNode.get("message").asText();
+            Duration timeTaken = Duration.between(
+                    OffsetDateTime.parse(commitsNode.get(i == commitsNode.size() - 1 ? i : i + 1).get("createdAt").asText()),
+                    OffsetDateTime.parse(commitNode.get("createdAt").asText())
+            );
+            OffsetDateTime commitDate = OffsetDateTime.parse(commitNode.get("createdAt").asText());
+            String webUrl = commitNode.get("webUrl").asText();
 
+            result.add(new Commit(
+                    sha,
+                    authorEmail,
+                    uauthorUrl,
+                    message,
+                    timeTaken,
+                    commitDate,
+                    webUrl
+            ));
+        }
+        return result;
+    }
+    public List<Commit> getCommitsByMRIid(long iid) {
+        return getCommits(parseJson(gitLabApiClientService.getCommitsByMergeRequestIid(iid)));
+    }
+    public List<Commit> getCommitByBranchName(String branchName){
+        return getCommits(parseJson(gitLabApiClientService.getCommitsByBranchName(branchName)));
+    }
 }
