@@ -3,6 +3,7 @@ package org.poc.apigateway.data;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.poc.apigateway.entities.Branch;
 import org.poc.apigateway.entities.Member;
 import org.poc.apigateway.entities.MergeRequest;
 import org.poc.apigateway.gitlab_api_client.GitLabApiClientService;
@@ -192,4 +193,37 @@ public class ResponseConstructingService {
     public List<MergeRequest> getMRsSinceLastMonday(){
         return getMRsSinceLastMonday(getMRsAll());
     }
+    @SuppressWarnings("all")
+    public List<Branch> getBranchesAll() {
+        JsonNode branchesAll = parseJson(gitLabApiClientService.getBranchesAll()),
+                membersAll = parseJson(gitLabApiClientService.getMembers());
+        List<Branch> result = new ArrayList<>();
+        Iterator<JsonNode> iterator = branchesAll.iterator();
+        while (iterator.hasNext()) {
+            JsonNode branchNode = iterator.next();
+
+            String name = branchNode.get("name").asText();
+            JsonNode commitsByBranchName = parseJson(gitLabApiClientService.getCommitsByBranchName(name));
+            String lastCommitSha = commitsByBranchName.get(0).get("shortId").asText();
+            String lastCommitUrl = commitsByBranchName.get(0).get("webUrl").asText();
+            String webUrl = branchNode.get("webUrl").asText();
+
+            result.add(new Branch(
+                    name,
+                    lastCommitSha,
+                    lastCommitUrl,
+                    webUrl
+            ));
+        }
+        return result;
+    }
+    public Branch getBranchByName(String name){
+        List<Branch> branches = getBranchesAll();
+        Iterator<Branch> iterator = branches.iterator();
+        while (iterator.hasNext()){
+            if(iterator.next().name().equals(name)) return iterator.next();
+        }
+        throw new IllegalArgumentException("Branch with name " + name + " not found");
+    }
+
 }

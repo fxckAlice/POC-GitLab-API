@@ -1,6 +1,7 @@
 package org.poc.apigateway.controllers;
 
 import org.poc.apigateway.data.ResponseConstructingService;
+import org.poc.apigateway.entities.Branch;
 import org.poc.apigateway.entities.MergeRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,5 +21,9 @@ public class TestController {
     @GetMapping("/merge-requests/all")
     public ResponseEntity<List<MergeRequest>> getMergeRequestsAll() {
         return ResponseEntity.ok(responseConstructingService.getMRsAll());
+    }
+    @GetMapping("/branches/all")
+    public ResponseEntity<List<Branch>> getBranchesAll() {
+        return ResponseEntity.ok(responseConstructingService.getBranchesAll());
     }
 }

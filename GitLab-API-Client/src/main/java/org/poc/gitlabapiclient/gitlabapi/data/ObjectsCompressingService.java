@@ -43,7 +43,7 @@ public class ObjectsCompressingService {
         String createdAt = bigCommit.get("created_at").asText();
         return new Commit(
                 bigCommit.get("short_id").asText(),
-                bigCommit.get("author_name").asText(),
+                bigCommit.get("author_email").asText(),
                 bigCommit.get("message").asText(),
                 OffsetDateTime.parse(createdAt),
                 bigCommit.get("web_url").asText()
