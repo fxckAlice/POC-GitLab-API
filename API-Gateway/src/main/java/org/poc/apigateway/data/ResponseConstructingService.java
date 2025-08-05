@@ -67,12 +67,9 @@ public class ResponseConstructingService {
 
         return result;
     }
-    @SuppressWarnings("all")
     public Member getMemberByEmail(String email) {
         List<Member> members = getMembers();
-        Iterator<Member> iterator = members.iterator();
-        while (iterator.hasNext()) {
-            Member member = iterator.next();
+        for (Member member : members) {
             if (member.email().equals(email)) {
                 return member;
             }
@@ -136,26 +133,17 @@ public class ResponseConstructingService {
         }
         throw new IllegalArgumentException("Merge request with iid " + iid + " not found");
     }
-    @SuppressWarnings("all")
     public List<MergeRequest> getMRsByAuthorId(List<MergeRequest> mergeRequests, long authorId) {
         List<MergeRequest> result = new LinkedList<>(mergeRequests);
-        Iterator<MergeRequest> iterator = result.iterator();
-        while (iterator.hasNext()){
-            if(iterator.next().id() == authorId) iterator.remove();
-        }
+        result.removeIf(mergeRequest -> mergeRequest.id() != authorId);
         return result;
     }
     public List<MergeRequest> getMRsByAuthorId(long authorId){
         return getMRsByAuthorId(getMRsAll(), authorId);
     }
-    @SuppressWarnings("all")
     public List<MergeRequest> getMRsSinceUntilDateTime(List<MergeRequest> mergeRequests, OffsetDateTime sinceDateTime, OffsetDateTime untilDateTime){
         List<MergeRequest> result = new LinkedList<>(mergeRequests);
-        Iterator<MergeRequest> iterator = result.iterator();
-        while (iterator.hasNext()){
-            MergeRequest mr = iterator.next();
-            if(sinceDateTime != null && !mr.createdAt().isBefore(sinceDateTime) && untilDateTime != null && mr.createdAt().isAfter(untilDateTime)) iterator.remove();
-        }
+        result.removeIf(mr -> sinceDateTime != null && !mr.createdAt().isBefore(sinceDateTime) && untilDateTime != null && mr.createdAt().isAfter(untilDateTime));
         return result;
     }
     public List<MergeRequest> getMRsSinceUntilDateTime(OffsetDateTime sinceDateTime, OffsetDateTime untilDateTime){
@@ -173,36 +161,11 @@ public class ResponseConstructingService {
     public List<MergeRequest> getMRsUntilDateTime(OffsetDateTime untilDateTime){
         return getMRsUntilDateTime(getMRsAll(), untilDateTime);
     }
-    public List<MergeRequest> getMRsSinceFirstOfTheMonth(List<MergeRequest> mergeRequests){
-        OffsetDateTime firstOfTheMonth = LocalDate.now()
-                .withDayOfMonth(1)
-                .atStartOfDay()
-                .atOffset(ZoneOffset.of("+02:00"));
-        return getMRsSinceDateTime(mergeRequests, firstOfTheMonth);
-    }
-    public List<MergeRequest> getMRsSinceFirstOfTheMonth(){
-        return getMRsSinceFirstOfTheMonth(getMRsAll());
-    }
-    public List<MergeRequest> getMRsSinceLastMonday(List<MergeRequest> mergeRequests){
-        return getMRsSinceDateTime(mergeRequests, LocalDate
-                .now()
-                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                .atStartOfDay()
-                .atOffset(ZoneOffset.of("+02:00"))
-        );
-    }
-    public List<MergeRequest> getMRsSinceLastMonday(){
-        return getMRsSinceLastMonday(getMRsAll());
-    }
-    @SuppressWarnings("all")
     public List<Branch> getBranchesAll() {
         JsonNode branchesAll = parseJson(gitLabApiClientService.getBranchesAll()),
                 membersAll = parseJson(gitLabApiClientService.getMembers());
         List<Branch> result = new ArrayList<>();
-        Iterator<JsonNode> iterator = branchesAll.iterator();
-        while (iterator.hasNext()) {
-            JsonNode branchNode = iterator.next();
-
+        for (JsonNode branchNode : branchesAll) {
             String name = branchNode.get("name").asText();
             JsonNode commitsByBranchName = parseJson(gitLabApiClientService.getCommitsByBranchName(name));
             String lastCommitSha = commitsByBranchName.get(0).get("shortId").asText();
@@ -265,5 +228,10 @@ public class ResponseConstructingService {
     }
     public List<Commit> getCommitByBranchName(String branchName){
         return getCommits(parseJson(gitLabApiClientService.getCommitsByBranchName(branchName)));
+    }
+    public List<Commit> getCommitsByAuthor(List<Commit> commits, String authorEmail){
+        List<Commit> result = new LinkedList<>(commits);
+        result.removeIf(commit -> !commit.authorEmail().equals(authorEmail));
+        return result;
     }
 }
