@@ -14,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.*;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -127,19 +126,18 @@ public class ResponseConstructingService {
     }
     public MergeRequest getMRByIid(long iid){
         List<MergeRequest> mrs = getMRsAll();
-        Iterator<MergeRequest> iterator = mrs.iterator();
-        while (iterator.hasNext()){
-            if(iterator.next().iid() == iid) return iterator.next();
+        for (MergeRequest mr : mrs) {
+            if (mr.iid() == iid) return mr;
         }
         throw new IllegalArgumentException("Merge request with iid " + iid + " not found");
     }
-    public List<MergeRequest> getMRsByAuthorId(List<MergeRequest> mergeRequests, long authorId) {
+    public List<MergeRequest> getMRsByAuthorEmail(List<MergeRequest> mergeRequests, String authorEmail) {
         List<MergeRequest> result = new LinkedList<>(mergeRequests);
-        result.removeIf(mergeRequest -> mergeRequest.id() != authorId);
+        result.removeIf(mergeRequest -> !mergeRequest.authorEmail().equals(authorEmail));
         return result;
     }
-    public List<MergeRequest> getMRsByAuthorId(long authorId){
-        return getMRsByAuthorId(getMRsAll(), authorId);
+    public List<MergeRequest> getMRsByAuthorEmail(String authorEmail){
+        return getMRsByAuthorEmail(getMRsAll(), authorEmail);
     }
     public List<MergeRequest> getMRsSinceUntilDateTime(List<MergeRequest> mergeRequests, OffsetDateTime sinceDateTime, OffsetDateTime untilDateTime){
         List<MergeRequest> result = new LinkedList<>(mergeRequests);
