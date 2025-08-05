@@ -126,6 +126,14 @@ public class ResponseConstructingService {
         });
         return result;
     }
+    public MergeRequest getMRByIid(long iid){
+        List<MergeRequest> mrs = getMRsAll();
+        Iterator<MergeRequest> iterator = mrs.iterator();
+        while (iterator.hasNext()){
+            if(iterator.next().iid() == iid) return iterator.next();
+        }
+        throw new IllegalArgumentException("Merge request with iid " + iid + " not found");
+    }
     @SuppressWarnings("all")
     public List<MergeRequest> getMRsByAuthorId(List<MergeRequest> mergeRequests, long authorId) {
         List<MergeRequest> result = new LinkedList<>(mergeRequests);
