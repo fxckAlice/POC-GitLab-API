@@ -1,6 +1,6 @@
 package org.poc.telegrambot.bot.users;
 
-import org.poc.telegrambot.bot.users.entities.User;;
+import org.poc.telegrambot.bot.users.entities.User;
 
 public interface UsersInterface {
     boolean isUserExist(long chatId);
