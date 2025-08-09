@@ -1,8 +1,10 @@
 package org.poc.telegrambot.bot;
 
 import org.poc.telegrambot.bot.response.ResponseService;
-import org.poc.telegrambot.bot.users.ListUsersInterface;
+import org.poc.telegrambot.bot.users.SetUsersInterface;
 import org.poc.telegrambot.bot.users.UsersInterface;
+import org.poc.telegrambot.bot.users.entities.States;
+import org.poc.telegrambot.bot.users.entities.User;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -17,13 +19,15 @@ public class Bot extends TelegramLongPollingBot {
     private final UsersInterface usersInterface;
     private final ResponseService responseService;
 
-    public Bot(BotConfig botConfig, ListUsersInterface usersInterface, ResponseService responseService) {
+    @SuppressWarnings("all")
+    public Bot(BotConfig botConfig, SetUsersInterface usersInterface, ResponseService responseService) {
         super(new DefaultBotOptions());
         this.botConfig = botConfig;
         this.usersInterface = usersInterface;
         this.responseService = responseService;
     }
 
+    @SuppressWarnings("all")
     @Override
     public String getBotToken() {
         return botConfig.getToken();
@@ -36,13 +40,41 @@ public class Bot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         Long chatId = update.getMessage().getChatId();
-        System.out.println(chatId);
-        if (!usersInterface.isUserExist(chatId)) {
-            usersInterface.addUser(chatId);
-        }
         if (update.hasMessage() && update.getMessage().hasText()) {
-            List<SendMessage> replies = responseService.getMembersAllResponse(chatId);
-            replies.forEach(this::sendTextMessage);
+            usersInterface.getUserByChatID(chatId);
+            User user = usersInterface.getUserByChatID(chatId);
+            String messageText = update.getMessage().getText();
+            switch (user.state()) {
+                case EXIT:
+                    sendTextMessage(responseService.startMessage(chatId));
+                    usersInterface.save(new User(chatId, States.START, user.activeFilter()));
+                case START:
+                    switch (messageText) {
+                        case "/members":
+                            sendTextMessage(responseService.getMembersAllResponse(chatId));
+                            usersInterface.save(new User(chatId, States.EXIT, user.activeFilter()));
+                        case "/merge-requests":
+                        case "/branches":
+                        case "/commits":
+                        default:
+                    }
+                case MEMBERS_ALL:
+                case MEMBERS_BY_EMAIL:
+                case MERGE_REQUESTS_ALL:
+                case MERGE_REQUESTS_BY_FILTER:
+                case MERGE_REQUEST_BY_IID:
+                case BRANCHES_ALL:
+                case BRANCH_BY_NAME:
+                case COMMITS_BY_BRANCH_NAME_AND_FILTER:
+                case COMMITS_BY_BRANCH_NAME:
+                case COMMITS_BY_MR_IID_AND_FILTER:
+                case COMMITS_BY_MR_IID:
+                case EMAIL_FILTER:
+                case SINCE_FILTER:
+                case UNTIL_FILTER:
+                case BRANCH_FILTER:
+                case MERGE_REQUEST_FILTER:
+            }
         }
     }
 
@@ -50,7 +82,12 @@ public class Bot extends TelegramLongPollingBot {
         try {
             execute(sendMessage);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+    }
+    public void sendTextMessage(List<SendMessage> messages) {
+        for (SendMessage m : messages) {
+            sendTextMessage(m);
         }
     }
 }
