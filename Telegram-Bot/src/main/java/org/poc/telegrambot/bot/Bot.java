@@ -6,14 +6,11 @@ import org.poc.telegrambot.bot.users.UsersInterface;
 import org.poc.telegrambot.bot.users.entities.ActiveFilter;
 import org.poc.telegrambot.bot.users.entities.States;
 import org.poc.telegrambot.bot.users.entities.User;
-import org.springframework.context.MessageSourceAware;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
 import java.time.*;
 import java.time.format.DateTimeParseException;
