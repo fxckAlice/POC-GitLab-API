@@ -3,14 +3,22 @@ package org.poc.telegrambot.bot;
 import org.poc.telegrambot.bot.response.ResponseService;
 import org.poc.telegrambot.bot.users.SetUsersInterface;
 import org.poc.telegrambot.bot.users.UsersInterface;
+import org.poc.telegrambot.bot.users.entities.ActiveFilter;
 import org.poc.telegrambot.bot.users.entities.States;
 import org.poc.telegrambot.bot.users.entities.User;
+import org.springframework.context.MessageSourceAware;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 
+import java.time.*;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 @Component
@@ -48,36 +56,146 @@ public class Bot extends TelegramLongPollingBot {
                 case EXIT:
                     sendTextMessage(responseService.startMessage(chatId));
                     usersInterface.save(new User(chatId, States.START, user.activeFilter()));
+                    break;
                 case START:
                     switch (messageText) {
                         case "/members":
-                            sendTextMessage(responseService.getMembersAllResponse(chatId));
-                            usersInterface.save(new User(chatId, States.EXIT, user.activeFilter()));
+                            sendTextMessage(responseService.getMembersMenuResponse(chatId));
+                            usersInterface.save(new User(chatId, States.MEMBERS_ALL, user.activeFilter()));
+                            break;
                         case "/merge-requests":
+                            sendTextMessage(responseService.getMRsMenuResponse(chatId));
+                            usersInterface.save(new User(chatId, States.MERGE_REQUESTS_ALL, user.activeFilter()));
+                            break;
                         case "/branches":
                         case "/commits":
                         default:
+                            sendWrongCommandMessage(user);
                     }
+                    break;
                 case MEMBERS_ALL:
+                    switch (messageText){
+                        case "/all":
+                            sendTextMessage(responseService.getMembersAllResponse(chatId));
+                            usersInterface.save(new User(chatId, States.EXIT, user.activeFilter()));
+                            break;
+                        case "/by-email":
+                            sendTextMessage(responseService.getMemberByEmailInputResponse(chatId));
+                            usersInterface.save(new User(chatId, States.MEMBERS_BY_EMAIL, user.activeFilter()));
+                            break;
+                        default:
+                            sendWrongCommandMessage(user);
+                    }
+                    break;
                 case MEMBERS_BY_EMAIL:
+                    sendTextMessage(responseService.getMemberByEmailResponse(chatId, messageText));
+                    usersInterface.save(new User(chatId, States.EXIT, user.activeFilter()));
+                    break;
                 case MERGE_REQUESTS_ALL:
-                case MERGE_REQUESTS_BY_FILTER:
+                    switch (messageText){
+                        case "/all":
+                            sendTextMessage(responseService.getMRsAllResponse(chatId));
+                            usersInterface.save(new User(chatId, States.EXIT, user.activeFilter()));
+                            break;
+                        case "/by-iid":
+                            sendTextMessage(responseService.getMRByIidInputResponse(chatId));
+                            usersInterface.save(new User(chatId, States.MERGE_REQUEST_BY_IID, user.activeFilter()));
+                            break;
+                        case "/by-filter":
+                            sendTextMessage(responseService.getMRsByFilterMenuResponse(chatId, user.activeFilter()));
+                            usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_FILTER, user.activeFilter()));
+                            break;
+                        default:
+                            sendWrongCommandMessage(user);
+                    }
+                    break;
                 case MERGE_REQUEST_BY_IID:
+                    sendTextMessage(responseService.getMRByIidResponse(chatId, Integer.parseInt(messageText)));
+                    usersInterface.save(new User(chatId, States.EXIT, user.activeFilter()));
+                    break;
+                case MERGE_REQUESTS_BY_FILTER:
+                    switch (messageText){
+                        case "/author-email":
+                            sendTextMessage(responseService.getMRsByFilterEmailInputResponse(chatId));
+                            usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_EMAIL, user.activeFilter()));
+                            break;
+                        case "/since-date":
+                            sendTextMessage(responseService.getMRsByFilterDateInputResponse(chatId));
+                            usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_SINCE, user.activeFilter()));
+                            break;
+                        case "/until-date":
+                            sendTextMessage(responseService.getMRsByFilterDateInputResponse(chatId));
+                            usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_UNTIL, user.activeFilter()));
+                            break;
+                        case "/set-since-first-of-the-month":
+                            ActiveFilter newMRFOTMFilter = new ActiveFilter(user.activeFilter().email(), user.activeFilter().branchName(), OffsetDateTime.now(ZoneOffset.UTC).withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS), user.activeFilter().until());
+                            sendTextMessage(responseService.getMRsByFilterMenuResponse(chatId, newMRFOTMFilter));
+                            usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_FILTER, newMRFOTMFilter));
+                            break;
+                        case "/set-since-last-monday":
+                            ActiveFilter newMREmailFilter = new ActiveFilter(user.activeFilter().email(), user.activeFilter().branchName(), OffsetDateTime.now(ZoneOffset.UTC)
+                                    .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                                    .truncatedTo(ChronoUnit.DAYS), user.activeFilter().until());
+                            sendTextMessage(responseService.getMRsByFilterMenuResponse(chatId, newMREmailFilter));
+                            usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_FILTER, newMREmailFilter));
+                            break;
+                        case "/send":
+                            sendTextMessage(responseService.getMRsByFilterResponse(chatId, user.activeFilter()));
+                            usersInterface.save(new User(chatId, States.EXIT, new ActiveFilter("", null, null, null)));
+                            break;
+                        case "/cancel":
+                            sendTextMessage(responseService.cancelMessage(chatId));
+                            usersInterface.save(new User(chatId, States.EXIT, new ActiveFilter("", null, null, null)));
+                            break;
+                        default:
+                            sendWrongCommandMessage(user);
+                    }
+                    break;
+                case MERGE_REQUESTS_BY_EMAIL:
+                    ActiveFilter newMREmailFilter = new ActiveFilter(messageText, user.activeFilter().branchName(), user.activeFilter().since(), user.activeFilter().until());
+                    sendTextMessage(responseService.getMRsByFilterMenuResponse(chatId, newMREmailFilter));
+                    usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_FILTER, newMREmailFilter));
+                    break;
+                case MERGE_REQUESTS_BY_SINCE: {
+                    ActiveFilter newMRSinceFilter = user.activeFilter();
+                    try{
+                        newMRSinceFilter = new ActiveFilter(user.activeFilter().email(), user.activeFilter().branchName(), OffsetDateTime.parse(messageText), user.activeFilter().until());
+                    }
+                    catch (DateTimeParseException e){
+                        sendTextMessage(responseService.getWrongDateFormatResponse(chatId));
+                    }
+                    sendTextMessage(responseService.getMRsByFilterMenuResponse(chatId, newMRSinceFilter));
+                    usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_FILTER, newMRSinceFilter));
+                    break;
+                }
+                case MERGE_REQUESTS_BY_UNTIL: {
+                    ActiveFilter newMRUntilFilter = user.activeFilter();
+                    try{
+                        newMRUntilFilter = new ActiveFilter(user.activeFilter().email(), user.activeFilter().branchName(), user.activeFilter().since(), OffsetDateTime.parse(messageText));
+                    }
+                    catch (DateTimeParseException e){
+                        sendTextMessage(responseService.getWrongDateFormatResponse(chatId));
+                    }
+                    sendTextMessage(responseService.getMRsByFilterMenuResponse(chatId, newMRUntilFilter));
+                    usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_FILTER, newMRUntilFilter));
+                    break;
+                }
                 case BRANCHES_ALL:
                 case BRANCH_BY_NAME:
                 case COMMITS_BY_BRANCH_NAME_AND_FILTER:
                 case COMMITS_BY_BRANCH_NAME:
                 case COMMITS_BY_MR_IID_AND_FILTER:
                 case COMMITS_BY_MR_IID:
-                case EMAIL_FILTER:
-                case SINCE_FILTER:
-                case UNTIL_FILTER:
-                case BRANCH_FILTER:
-                case MERGE_REQUEST_FILTER:
             }
         }
     }
-
+    public void sendWrongCommandMessage(User user) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(user.chatId()));
+        message.setText("Wrong command. Please, try again.");
+        sendTextMessage(message);
+        usersInterface.save(new User(user.chatId(), States.EXIT, user.activeFilter()));
+    }
     public void sendTextMessage(SendMessage sendMessage) {
         try {
             execute(sendMessage);

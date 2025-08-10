@@ -5,8 +5,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.poc.telegrambot.client.GitLabApiClient;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,33 +29,144 @@ public class MessageConstructor {
             throw new IllegalArgumentException(e);
         }
     }
-
+    public String constructTime(OffsetDateTime dateTime){
+        return dateTime.getYear() + "-" +
+                dateTime.getMonthValue() + "-" +
+                dateTime.getDayOfMonth() + " " +
+                dateTime.getHour() + ":" +
+                dateTime.getMinute() + ":" +
+                dateTime.getSecond();
+    }
+    public String constructTime(Duration duration){
+        return duration.toHours() + "h " +
+                duration.toMinutes() % 60 + "m " +
+                duration.getSeconds() % 60 + "s";
+    }
+    private String constructMember(JsonNode member, int i){
+        String accessLevel = switch (member.get("accessLevel").asInt()){
+            case 50 -> "Owner";
+            case 40 -> "Maintainer";
+            case 30 -> "Developer";
+            case 20 -> "Reporter";
+            case 15 -> "Planer";
+            case 10 -> "Guest";
+            case 5 -> "Minimal Access";
+            case 0 -> "No Access";
+            default -> "Unknown";
+        };
+        return "#" + (i + 1) +
+                "\n\nid:    \t<a href=\"" + member.get("webUrl").asText() + "\">" + member.get("id").asLong() + "</a> " +
+                "\nusername:    \t" + member.get("username").asText() +
+                "\nemail:    \t" + member.get("email").asText() +
+                "\naccessLevel:    \t" + accessLevel +
+                "\nMerge Requests Created:    \t" + member.get("createdMRs").asInt();
+    }
+    private String constructMR(JsonNode mr, int i){
+        return "#" + (i + 1) +
+                "\n\nid:    \t<a href=\"" + mr.get("webUrl").asText() + "\">" + mr.get("id").asInt() + "</a> " +
+                "\niid:    \t" + mr.get("iid").asInt() +
+                "\ntitle:    \t" + mr.get("title").asText() +
+                "\nauthor:    \t<a href=\"" + mr.get("authorUrl").asText() + "\">" + mr.get("authorEmail").asText() + "</a> " +
+                "\ncreated:    \t" + constructTime(OffsetDateTime.parse(mr.get("createdAt").asText())) +
+                "\nmerged:    \t" + constructTime(OffsetDateTime.parse(mr.get("mergedAt").asText())) +
+                "\ntargetBranch:    \t<a href=\"" + mr.get("targetBranchUrl").asText() + "\">" + mr.get("targetBranchName").asText() + "</a> " +
+                "\nstate:    \t" + mr.get("state").asText() +
+                "\ncommits:    \t" + mr.get("commitsCount").asInt() +
+                "\ntime taken:    \t" + constructTime(Duration.parse(mr.get("timeTaken").asText()));
+    }
     public List<SendMessage> getMembersAll(){
-        JsonNode allMembers = parseJson(gitLabApiClient.getMembersAll());
         List<SendMessage> messages = new ArrayList<>();
-        for (int i = 0; i < allMembers.size(); i++) {
-            JsonNode member = allMembers.get(i);
-            String accessLevel = switch (member.get("accessLevel").asInt()){
-                case 50 -> "Owner";
-                case 40 -> "Maintainer";
-                case 30 -> "Developer";
-                case 20 -> "Reporter";
-                case 15 -> "Planer";
-                case 10 -> "Guest";
-                case 5 -> "Minimal Access";
-                case 0 -> "No Access";
-                default -> "Unknown";
-            };
-            String messageText = "#" + (i + 1) +
-                    "\n\nid:    \t<a href=\"" + member.get("webUrl").asText() + "\">" + member.get("id").asLong() + "</a> " +
-                    "\nusername:    \t" + member.get("username") +
-                    "\nemail:    \t" + member.get("email") +
-                    "\naccessLevel:    \t" + accessLevel +
-                    "\nMerge Requests Created:    \t" + member.get("createdMRs").asInt();
-
+        try{
+            JsonNode allMembers = parseJson(gitLabApiClient.getMembersAll());
+            for (int i = 0; i < allMembers.size(); i++) {
+                SendMessage message = new SendMessage();
+                message.setParseMode("HTML");
+                message.setText(constructMember(allMembers.get(i), i));
+                messages.add(message);
+            }
+        }
+        catch (HttpClientErrorException e){
             SendMessage message = new SendMessage();
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+            messages.add(message);
+        }
+        return messages;
+    }
+    public SendMessage getMemberByEmail(String email){
+        SendMessage message = new SendMessage();
+        try{
             message.setParseMode("HTML");
-            message.setText(messageText);
+            message.setText(constructMember(parseJson(gitLabApiClient.getMemberByEmail(email)), 0));
+        }
+        catch (HttpClientErrorException.BadRequest e){
+            message.setText("Wrong email. Please, try again.");
+        }
+        catch (HttpClientErrorException e){
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+        }
+        return message;
+    }
+    public List<SendMessage> getMRsAll(){
+        List<SendMessage> messages = new ArrayList<>();
+        try {
+            JsonNode allMRs = parseJson(gitLabApiClient.getMRsAll());
+            for (int i = 0; i < allMRs.size(); i++) {
+                SendMessage message = new SendMessage();
+                message.setParseMode("HTML");
+                message.setText(constructMR(allMRs.get(i), i));
+                messages.add(message);
+            }
+        }
+        catch (HttpClientErrorException e){
+            SendMessage message = new SendMessage();
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+            messages.add(message);
+        }
+        return messages;
+    }
+    public SendMessage getMRByIid(int iid){
+        SendMessage message = new SendMessage();
+        try {
+            message.setParseMode("HTML");
+            message.setText(constructMR(parseJson(gitLabApiClient.getMRByIid(iid)), 0));
+        }
+        catch (HttpClientErrorException.BadRequest e){
+            message.setText("Wrong merge request id. Please, try again.");
+        }
+        catch (HttpClientErrorException e){
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+        }
+        return message;
+    }
+    public List<SendMessage> getMRsByFilter(String email, OffsetDateTime since, OffsetDateTime until){
+        List<SendMessage> messages = new ArrayList<>();
+        try {
+            JsonNode allMRs = parseJson(gitLabApiClient.getMRsByFilter(email, since, until));
+            for (int i = 0; i < allMRs.size(); i++) {
+                SendMessage message = new SendMessage();
+                message.setParseMode("HTML");
+                message.setText(constructMR(allMRs.get(i), i));
+                messages.add(message);
+            }
+        }
+        catch (IllegalArgumentException e){
+            SendMessage message = new SendMessage();
+            message.setText("At least one filter must be specified.");
+            messages.add(message);
+        }
+        catch (HttpClientErrorException.BadRequest e){
+            SendMessage message = new SendMessage();
+            message.setText("Nothing to show.");
+            messages.add(message);
+        }
+        catch (HttpClientErrorException e){
+            SendMessage message = new SendMessage();
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
             messages.add(message);
         }
         return messages;

@@ -25,6 +25,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleResourceNotFound(NoResourceFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Not found: " + ex.getMessage());
     }
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad request: " + ex.getMessage());
+    }
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<String> handleIllegalStateException(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Bad request: " + ex.getMessage());
+    }
     @ExceptionHandler(HttpClientErrorException.class)
     public ResponseEntity<String> handleResponseException(HttpClientErrorException ex) {
         return ResponseEntity.status(ex.getStatusCode()).body(ex.getResponseBodyAsString());

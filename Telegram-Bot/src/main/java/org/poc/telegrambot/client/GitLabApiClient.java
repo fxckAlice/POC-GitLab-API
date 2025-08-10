@@ -1,11 +1,9 @@
 package org.poc.telegrambot.client;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -34,12 +32,12 @@ public class GitLabApiClient {
         );
         return response.getBody();
     }
-    public String getMembersAll(){
+    public String getMembersAll() throws HttpClientErrorException {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(protocol + host + "/gateway/members/all", headers);
     }
-    public String getMemberByEmail(String email){
+    public String getMemberByEmail(String email) throws HttpClientErrorException{
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/members/email")
@@ -47,22 +45,25 @@ public class GitLabApiClient {
                 .toUriString(), headers
         );
     }
-    public String getMRsAll(){
+    public String getMRsAll() throws HttpClientErrorException{
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(protocol + host + "/gateway/merge-requests/all", headers);
     }
-    public String getMRsByFilter(String email, OffsetDateTime since, OffsetDateTime until){
+    public String getMRsByFilter(String email, OffsetDateTime since, OffsetDateTime until) throws HttpClientErrorException{
+        if ((email == null || email.isEmpty()) && since == null && until == null) {
+            throw new IllegalArgumentException("At least one filter must be specified.");
+        }
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/merge-requests")
                 .queryParam("author_email", email != null ? email : "")
-                .queryParam("since", since != null ? since.toString() : "")
-                .queryParam("until", until != null ? until.toString() : "")
+                .queryParam("since", since != null ? since : "")
+                .queryParam("until", until != null ? until : "")
                 .toUriString(), headers
         );
     }
-    public String getMRByIid(int iid){
+    public String getMRByIid(int iid) throws HttpClientErrorException{
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/merge-requests/iid")
@@ -70,12 +71,12 @@ public class GitLabApiClient {
                 .toUriString(), headers
         );
     }
-    public String getBranchesAll(){
+    public String getBranchesAll() throws HttpClientErrorException{
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(protocol + host + "/gateway/branches/all", headers);
     }
-    public String getBranchByName(String name){
+    public String getBranchByName(String name) throws HttpClientErrorException{
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/branches/name")
@@ -83,7 +84,7 @@ public class GitLabApiClient {
                 .toUriString(), headers
         );
     }
-    public String getCommitsByBranchName(String branchName){
+    public String getCommitsByBranchName(String branchName) throws HttpClientErrorException{
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/commits/branch/all")
@@ -91,7 +92,7 @@ public class GitLabApiClient {
                 .toUriString(), headers
         );
     }
-    public String getCommitsByBranchNameAndFilter(String branchName, String authorEmail){
+    public String getCommitsByBranchNameAndFilter(String branchName, String authorEmail) throws HttpClientErrorException{
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/commits/branch")
@@ -100,7 +101,7 @@ public class GitLabApiClient {
                 .toUriString(), headers
         );
     }
-    public String getCommitsByMRIid(long iid){
+    public String getCommitsByMRIid(long iid) throws HttpClientErrorException{
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/commits/mr/all")
@@ -108,7 +109,7 @@ public class GitLabApiClient {
                 .toUriString(), headers
         );
     }
-    public String getCommitsByMRIidAndFilter(long iid, String authorEmail){
+    public String getCommitsByMRIidAndFilter(long iid, String authorEmail) throws HttpClientErrorException{
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/commits/mr")

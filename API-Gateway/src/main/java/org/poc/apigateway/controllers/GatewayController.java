@@ -11,6 +11,7 @@ import org.poc.apigateway.entities.MergeRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @RestController
@@ -36,15 +37,15 @@ public class GatewayController {
     @GetMapping("/merge-requests")
     public ResponseEntity<List<MergeRequest>> getMergeRequestsByFilter(@ModelAttribute MRFilter filter) {
         List<MergeRequest> mrs = responseConstructingService.getMRsAll();
-        if (filter.author_email() == null && filter.since() == null && filter.until() == null) throw new IllegalArgumentException("At least one filter parameter must be specified");
-        if (filter.author_email() != null) {
+        if (filter.author_email().isEmpty() && filter.since() == null && filter.until() == null) throw new IllegalArgumentException("At least one filter parameter must be specified");
+        if (!filter.author_email().isEmpty()) {
             mrs = responseConstructingService.getMRsByAuthorEmail(mrs, filter.author_email());
         }
         if (filter.since() != null) {
-            mrs = responseConstructingService.getMRsSinceDateTime(mrs, filter.since());
+            mrs = responseConstructingService.getMRsSinceDateTime(mrs, OffsetDateTime.parse(filter.since().toString()));
         }
         if (filter.until() != null) {
-            mrs = responseConstructingService.getMRsUntilDateTime(mrs, filter.until());
+            mrs = responseConstructingService.getMRsUntilDateTime(mrs, OffsetDateTime.parse(filter.until().toString()));
         }
         return ResponseEntity.ok(mrs);
     }
@@ -62,12 +63,12 @@ public class GatewayController {
     }
     @GetMapping("/commits/branch/all")
     public ResponseEntity<List<Commit>> getCommitsByBranchName(@RequestParam String branch_name) {
-        if (branch_name == null) throw new IllegalArgumentException("Branch name must be specified");
+        if (branch_name.isEmpty()) throw new IllegalArgumentException("Branch name must be specified");
         return ResponseEntity.ok(responseConstructingService.getCommitByBranchName(branch_name));
     }
     @GetMapping("/commits/branch")
     public ResponseEntity<List<Commit>> getCommitsByBranchNameAndFilter(@ModelAttribute CommitsByBranchFilter filter) {
-        if (filter.branch_name() == null || filter.author_email() == null) throw new IllegalArgumentException("Both branch_name and author_email must be specified");
+        if (filter.branch_name().isEmpty() || filter.author_email().isEmpty()) throw new IllegalArgumentException("Both branch_name and author_email must be specified");
         return ResponseEntity.ok(responseConstructingService.getCommitsByAuthor(responseConstructingService.getCommitByBranchName(filter.branch_name()), filter.author_email()));
     }
     @GetMapping("/commits/mr/all")
@@ -77,7 +78,7 @@ public class GatewayController {
     }
     @GetMapping("/commits/mr")
     public ResponseEntity<List<Commit>> getCommitsByMRsIidAndFilter(@ModelAttribute CommitsByMRsIidFilter filter) {
-        if (filter.author_email() == null || filter.iid() <= 0) throw new IllegalArgumentException("Both author_email and IID must be specified");
+        if (filter.author_email().isEmpty() || filter.iid() <= 0) throw new IllegalArgumentException("Both author_email and IID must be specified");
         return ResponseEntity.ok(responseConstructingService.getCommitsByAuthor(responseConstructingService.getCommitsByMRIid(filter.iid()), filter.author_email()));
     }
 }
