@@ -55,24 +55,29 @@ public class MessageConstructor {
             default -> "Unknown";
         };
         return "#" + (i + 1) +
-                "\n\nid:    \t<a href=\"" + member.get("webUrl").asText() + "\">" + member.get("id").asLong() + "</a> " +
-                "\nusername:    \t" + member.get("username").asText() +
-                "\nemail:    \t" + member.get("email").asText() +
-                "\naccessLevel:    \t" + accessLevel +
+                "\n\nID:    \t<a href=\"" + member.get("webUrl").asText() + "\">" + member.get("id").asLong() + "</a> " +
+                "\nUsername:    \t" + member.get("username").asText() +
+                "\nEmail:    \t" + member.get("email").asText() +
+                "\nAccess Level:    \t" + accessLevel +
                 "\nMerge Requests Created:    \t" + member.get("createdMRs").asInt();
     }
     private String constructMR(JsonNode mr, int i){
         return "#" + (i + 1) +
-                "\n\nid:    \t<a href=\"" + mr.get("webUrl").asText() + "\">" + mr.get("id").asInt() + "</a> " +
-                "\niid:    \t" + mr.get("iid").asInt() +
-                "\ntitle:    \t" + mr.get("title").asText() +
-                "\nauthor:    \t<a href=\"" + mr.get("authorUrl").asText() + "\">" + mr.get("authorEmail").asText() + "</a> " +
-                "\ncreated:    \t" + constructTime(OffsetDateTime.parse(mr.get("createdAt").asText())) +
-                "\nmerged:    \t" + constructTime(OffsetDateTime.parse(mr.get("mergedAt").asText())) +
-                "\ntargetBranch:    \t<a href=\"" + mr.get("targetBranchUrl").asText() + "\">" + mr.get("targetBranchName").asText() + "</a> " +
-                "\nstate:    \t" + mr.get("state").asText() +
-                "\ncommits:    \t" + mr.get("commitsCount").asInt() +
-                "\ntime taken:    \t" + constructTime(Duration.parse(mr.get("timeTaken").asText()));
+                "\n\nID:    \t<a href=\"" + mr.get("webUrl").asText() + "\">" + mr.get("id").asInt() + "</a> " +
+                "\nIID:    \t" + mr.get("iid").asInt() +
+                "\nTitle:    \t" + mr.get("title").asText() +
+                "\nAuthor:    \t<a href=\"" + mr.get("authorUrl").asText() + "\">" + mr.get("authorEmail").asText() + "</a> " +
+                "\nCreated:    \t" + constructTime(OffsetDateTime.parse(mr.get("createdAt").asText())) +
+                "\nMerged:    \t" + constructTime(OffsetDateTime.parse(mr.get("mergedAt").asText())) +
+                "\nTarget Branch:    \t<a href=\"" + mr.get("targetBranchUrl").asText() + "\">" + mr.get("targetBranchName").asText() + "</a> " +
+                "\nState:    \t" + mr.get("state").asText() +
+                "\nCommits:    \t" + mr.get("commitsCount").asInt() +
+                "\nTime Taken:    \t" + constructTime(Duration.parse(mr.get("timeTaken").asText()));
+    }
+    private String constructBranch(JsonNode branch, int i){
+        return "#" + (i + 1) +
+                "\n\nName:    \t<a href=\"" + branch.get("webUrl").asText() + "\">" + branch.get("name").asText() + "</a>" +
+                "\nLast Commit:    \t<a href=\"" + branch.get("lastCommitUrl").asText() + "\">" + branch.get("lastCommitSha").asText() + "</a>";
     }
     public List<SendMessage> getMembersAll(){
         List<SendMessage> messages = new ArrayList<>();
@@ -170,5 +175,39 @@ public class MessageConstructor {
             messages.add(message);
         }
         return messages;
+    }
+    public List<SendMessage> getBranchesAll(){
+        List<SendMessage> messages = new ArrayList<>();
+        try {
+            JsonNode allBranches = parseJson(gitLabApiClient.getBranchesAll());
+            for (int i = 0; i < allBranches.size(); i++) {
+                SendMessage message = new SendMessage();
+                message.setParseMode("HTML");
+                message.setText(constructBranch(allBranches.get(i), i));
+                messages.add(message);
+            }
+        }
+        catch (HttpClientErrorException e){
+            SendMessage message = new SendMessage();
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+            messages.add(message);
+        }
+        return messages;
+    }
+    public SendMessage getBranchByName(String name){
+        SendMessage message = new SendMessage();
+        try {
+            message.setParseMode("HTML");
+            message.setText(constructBranch(parseJson(gitLabApiClient.getBranchByName(name)), 0));
+        }
+        catch (HttpClientErrorException.BadRequest e){
+            message.setText("Wrong branch name. Please, try again.");
+        }
+        catch (HttpClientErrorException e){
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+        }
+        return message;
     }
 }

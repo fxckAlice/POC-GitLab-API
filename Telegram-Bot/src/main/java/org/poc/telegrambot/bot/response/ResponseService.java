@@ -254,4 +254,56 @@ public class ResponseService {
         message.setText("Wrong date format!");
         return message;
     }
+    public SendMessage getBranchesMenuResponse(Long chatId){
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Choose option:");
+        List<KeyboardRow> rows = new ArrayList<>();
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add("/all");
+        row1.add("/by-name");
+        rows.add(row1);
+        message.setReplyMarkup(ReplyKeyboardMarkup.builder()
+                .keyboard(rows)
+                .build()
+        );
+        return message;
+    }
+    @SuppressWarnings("all")
+    public List<SendMessage> getBranchesAllResponse(Long chatId) {
+        List<SendMessage> result = new ArrayList<>();
+        SendMessage title = new SendMessage();
+        title.setChatId(String.valueOf(chatId));
+        title.setText("All Branches");
+        result.add(title);
+        List<SendMessage> messages = messageConstructor.getBranchesAll();
+        for (SendMessage m : messages) {
+            if (m.getChatId() == null || m.getChatId().isBlank()) {
+                m.setChatId(String.valueOf(chatId));
+            }
+            m.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(m);
+        }
+        if(messages.isEmpty()){
+            SendMessage message = new SendMessage();
+            message.setChatId(String.valueOf(chatId));
+            message.setText("Nothing to show");
+            message.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(message);
+        }
+        return result;
+    }
+    public SendMessage getBranchByNameInputResponse(Long chatId){
+        SendMessage message = new SendMessage();
+        message.setReplyMarkup(new ReplyKeyboardRemove(true));
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Send me the name of branch whose info you want to get");
+        return message;
+    }
+    public SendMessage getBranchByNameResponse(Long chatId, String name){
+        SendMessage message = messageConstructor.getBranchByName(name);
+        message.setChatId(String.valueOf(chatId));
+        message.setReplyMarkup(new ReplyKeyboardRemove(true));
+        return message;
+    }
 }

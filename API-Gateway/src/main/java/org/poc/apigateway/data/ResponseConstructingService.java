@@ -196,9 +196,8 @@ public class ResponseConstructingService {
     }
     public Branch getBranchByName(String name){
         List<Branch> branches = getBranchesAll();
-        Iterator<Branch> iterator = branches.iterator();
-        while (iterator.hasNext()){
-            if(iterator.next().name().equals(name)) return iterator.next();
+        for (Branch branch : branches) {
+            if (branch.name().equals(name)) return branch;
         }
         throw new IllegalArgumentException("Branch with name " + name + " not found");
     }

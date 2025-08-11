@@ -13,6 +13,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
@@ -65,6 +66,9 @@ public class Bot extends TelegramLongPollingBot {
                             usersInterface.save(new User(chatId, States.MERGE_REQUESTS_ALL, user.activeFilter()));
                             break;
                         case "/branches":
+                            sendTextMessage(responseService.getBranchesMenuResponse(chatId));
+                            usersInterface.save(new User(chatId, States.BRANCHES_ALL, user.activeFilter()));
+                            break;
                         case "/commits":
                         default:
                             sendWrongCommandMessage(user);
@@ -153,10 +157,10 @@ public class Bot extends TelegramLongPollingBot {
                     sendTextMessage(responseService.getMRsByFilterMenuResponse(chatId, newMREmailFilter));
                     usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_FILTER, newMREmailFilter));
                     break;
-                case MERGE_REQUESTS_BY_SINCE: {
+                case MERGE_REQUESTS_BY_SINCE:
                     ActiveFilter newMRSinceFilter = user.activeFilter();
                     try{
-                        newMRSinceFilter = new ActiveFilter(user.activeFilter().email(), user.activeFilter().branchName(), OffsetDateTime.parse(messageText), user.activeFilter().until());
+                        newMRSinceFilter = new ActiveFilter(user.activeFilter().email(), user.activeFilter().branchName(), OffsetDateTime.parse(messageText).withOffsetSameInstant(ZoneOffset.UTC), user.activeFilter().until());
                     }
                     catch (DateTimeParseException e){
                         sendTextMessage(responseService.getWrongDateFormatResponse(chatId));
@@ -164,11 +168,10 @@ public class Bot extends TelegramLongPollingBot {
                     sendTextMessage(responseService.getMRsByFilterMenuResponse(chatId, newMRSinceFilter));
                     usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_FILTER, newMRSinceFilter));
                     break;
-                }
-                case MERGE_REQUESTS_BY_UNTIL: {
+                case MERGE_REQUESTS_BY_UNTIL:
                     ActiveFilter newMRUntilFilter = user.activeFilter();
                     try{
-                        newMRUntilFilter = new ActiveFilter(user.activeFilter().email(), user.activeFilter().branchName(), user.activeFilter().since(), OffsetDateTime.parse(messageText));
+                        newMRUntilFilter = new ActiveFilter(user.activeFilter().email(), user.activeFilter().branchName(), user.activeFilter().since(), OffsetDateTime.parse(messageText).withOffsetSameInstant(ZoneOffset.UTC));
                     }
                     catch (DateTimeParseException e){
                         sendTextMessage(responseService.getWrongDateFormatResponse(chatId));
@@ -176,9 +179,24 @@ public class Bot extends TelegramLongPollingBot {
                     sendTextMessage(responseService.getMRsByFilterMenuResponse(chatId, newMRUntilFilter));
                     usersInterface.save(new User(chatId, States.MERGE_REQUESTS_BY_FILTER, newMRUntilFilter));
                     break;
-                }
                 case BRANCHES_ALL:
+                    switch (messageText){
+                        case "/all":
+                            sendTextMessage(responseService.getBranchesAllResponse(chatId));
+                            usersInterface.save(new User(chatId, States.EXIT, user.activeFilter()));
+                            break;
+                        case "/by-name":
+                            sendTextMessage(responseService.getBranchByNameInputResponse(chatId));
+                            usersInterface.save(new User(chatId, States.BRANCH_BY_NAME, user.activeFilter()));
+                            break;
+                        default:
+                            sendWrongCommandMessage(user);
+                    }
+                    break;
                 case BRANCH_BY_NAME:
+                    sendTextMessage(responseService.getBranchByNameResponse(chatId, messageText));
+                    usersInterface.save(new User(chatId, States.EXIT, user.activeFilter()));
+                    break;
                 case COMMITS_BY_BRANCH_NAME_AND_FILTER:
                 case COMMITS_BY_BRANCH_NAME:
                 case COMMITS_BY_MR_IID_AND_FILTER:
