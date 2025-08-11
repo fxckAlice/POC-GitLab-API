@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -134,16 +133,31 @@ public class ResponseConstructingService {
     public List<MergeRequest> getMRsByAuthorEmail(List<MergeRequest> mergeRequests, String authorEmail) {
         List<MergeRequest> result = new LinkedList<>(mergeRequests);
         result.removeIf(mergeRequest -> !mergeRequest.authorEmail().equals(authorEmail));
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("Merge request with author email " + authorEmail + " not found");
+        }
         return result;
     }
     public List<MergeRequest> getMRsByAuthorEmail(String authorEmail){
         return getMRsByAuthorEmail(getMRsAll(), authorEmail);
     }
-    public List<MergeRequest> getMRsSinceUntilDateTime(List<MergeRequest> mergeRequests, OffsetDateTime sinceDateTime, OffsetDateTime untilDateTime){
+    public List<MergeRequest> getMRsSinceUntilDateTime(List<MergeRequest> mergeRequests, OffsetDateTime sinceDateTime, OffsetDateTime untilDateTime) {
         List<MergeRequest> result = new LinkedList<>(mergeRequests);
-        result.removeIf(mr -> sinceDateTime != null && !mr.createdAt().isBefore(sinceDateTime) && untilDateTime != null && mr.createdAt().isAfter(untilDateTime));
+
+        result.removeIf(mr ->
+                (sinceDateTime != null && mr.createdAt().isBefore(sinceDateTime)) ||
+                        (untilDateTime != null && mr.createdAt().isAfter(untilDateTime))
+        );
+
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "No merge requests found between " + sinceDateTime + " and " + untilDateTime
+            );
+        }
+
         return result;
     }
+
     public List<MergeRequest> getMRsSinceUntilDateTime(OffsetDateTime sinceDateTime, OffsetDateTime untilDateTime){
         return getMRsSinceUntilDateTime(getMRsAll(), sinceDateTime, untilDateTime);
     }
@@ -181,9 +195,8 @@ public class ResponseConstructingService {
     }
     public Branch getBranchByName(String name){
         List<Branch> branches = getBranchesAll();
-        Iterator<Branch> iterator = branches.iterator();
-        while (iterator.hasNext()){
-            if(iterator.next().name().equals(name)) return iterator.next();
+        for (Branch branch : branches) {
+            if (branch.name().equals(name)) return branch;
         }
         throw new IllegalArgumentException("Branch with name " + name + " not found");
     }
@@ -230,6 +243,9 @@ public class ResponseConstructingService {
     public List<Commit> getCommitsByAuthor(List<Commit> commits, String authorEmail){
         List<Commit> result = new LinkedList<>(commits);
         result.removeIf(commit -> !commit.authorEmail().equals(authorEmail));
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("No commits found by author with email " + authorEmail);
+        }
         return result;
     }
 }
