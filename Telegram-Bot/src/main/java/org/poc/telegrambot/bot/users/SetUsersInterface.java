@@ -37,7 +37,7 @@ public class SetUsersInterface implements UsersInterface{
                 return u;
             }
         }
-        User newUser = new User(chatId, States.EXIT, new ActiveFilter("", "", null, null));
+        User newUser = new User(chatId, States.EXIT, new ActiveFilter("", "", 0, null, null));
         users.add(newUser);
         return newUser;
     }

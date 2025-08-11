@@ -165,6 +165,12 @@ public class ResponseService {
         message.setReplyMarkup(new ReplyKeyboardRemove(true));
         return message;
     }
+    public SendMessage getWrongIidFormatResponse(Long chatId){
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Wrong iid format!");
+        return message;
+    }
     public List<SendMessage> getMRsByFilterMenuResponse(Long chatId, ActiveFilter activeFilter){
         List<SendMessage> result = new ArrayList<>();
 
@@ -305,5 +311,174 @@ public class ResponseService {
         message.setChatId(String.valueOf(chatId));
         message.setReplyMarkup(new ReplyKeyboardRemove(true));
         return message;
+    }
+    public SendMessage getCommitsMenuResponse(Long chatId){
+        SendMessage message = new SendMessage();
+
+        message.setText("Choose option:");
+        message.setChatId(String.valueOf(chatId));
+
+        List<KeyboardRow> rows = new ArrayList<>();
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add("/by-branch-name");
+        row1.add("/by-mr-iid");
+        rows.add(row1);
+        message.setReplyMarkup(ReplyKeyboardMarkup.builder()
+                .keyboard(rows)
+                .build()
+        );
+        return message;
+    }
+    public SendMessage getCommitsByBranchNameInputResponse(Long chatId){
+        SendMessage message = new SendMessage();
+        message.setReplyMarkup(new ReplyKeyboardRemove(true));
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Send me the name of branch whose commits you want to get");
+        return message;
+    }
+    public SendMessage getCommitsByBranchNameMenuResponse(Long chatId){
+        SendMessage message = new SendMessage();
+        message.setText("Choose option:");
+        message.setChatId(chatId);
+
+        List<KeyboardRow> rows = new ArrayList<>();
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add("/all");
+        row1.add("/by-filter");
+        rows.add(row1);
+
+        message.setReplyMarkup(new ReplyKeyboardMarkup(rows));
+        return message;
+    }
+    @SuppressWarnings("all")
+    public List<SendMessage> getCommitsByBranchNameResponse(Long chatId, String branchName){
+        List<SendMessage> result = new ArrayList<>();
+        SendMessage title = new SendMessage();
+        title.setChatId(String.valueOf(chatId));
+        title.setText("Commits By Branch Name");
+        result.add(title);
+
+        List<SendMessage> messages = messageConstructor.getCommitsByBranchNameAll(branchName);
+        for (SendMessage m : messages) {
+            if (m.getChatId() == null || m.getChatId().isBlank()) {
+                m.setChatId(String.valueOf(chatId));
+            }
+            m.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(m);
+        }
+        if(messages.isEmpty()){
+            SendMessage message = new SendMessage();
+            message.setChatId(String.valueOf(chatId));
+            message.setText("Nothing to show");
+            message.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(message);
+        }
+        return result;
+    }
+    public SendMessage getCommitByBranchNameAuthorEmailInputResponse(Long chatId){
+        SendMessage message = new SendMessage();
+        message.setReplyMarkup(new ReplyKeyboardRemove(true));
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Send me the email of author whose commits you want to get");
+        return message;
+    }
+    @SuppressWarnings("all")
+    public List<SendMessage> getCommitsByBranchNameAndFilterResponse(Long chatId, String branchName, String authorEmail){
+        List<SendMessage> result = new ArrayList<>();
+        SendMessage title = new SendMessage();
+        title.setChatId(String.valueOf(chatId));
+        title.setText("Commits By Branch Name And Filter");
+        result.add(title);
+
+        List<SendMessage> messages = messageConstructor.getCommitsByBranchNameAndFilter(branchName, authorEmail);
+        for(SendMessage m : messages) {
+            if (m.getChatId() == null || m.getChatId().isBlank()) {
+                m.setChatId(String.valueOf(chatId));
+            }
+            m.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(m);
+        }
+        if(messages.isEmpty()){
+            SendMessage message = new SendMessage();
+            message.setChatId(String.valueOf(chatId));
+            message.setText("Nothing to show");
+            message.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(message);
+        }
+        return result;
+    }
+    public SendMessage getCommitsByMRIidInputResponse(Long chatId){
+        SendMessage message = new SendMessage();
+        message.setReplyMarkup(new ReplyKeyboardRemove(true));
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Send me the iid of merge request whose commits you want to get");
+        return message;
+    }
+    public SendMessage getCommitsByMRIidMenuResponse(Long chatId){
+        SendMessage message = new SendMessage();
+        message.setText("Choose option:");
+        message.setChatId(String.valueOf(chatId));
+        List<KeyboardRow> rows = new ArrayList<>();
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add("/all");
+        row1.add("/by-filter");
+        rows.add(row1);
+        message.setReplyMarkup(new ReplyKeyboardMarkup(rows));
+        return message;
+    }
+    @SuppressWarnings("all")
+    public List<SendMessage> getCommitsByMRIidAllResponse(Long chatId, int iid){
+        List<SendMessage> result = new ArrayList<>();
+        SendMessage title = new SendMessage();
+        title.setChatId(String.valueOf(chatId));
+        title.setText("Commits By Merge Request Iid");
+        result.add(title);
+        List<SendMessage> messages = messageConstructor.getCommitsByMRIidAll(iid);
+        for (SendMessage m : messages) {
+            if (m.getChatId() == null || m.getChatId().isBlank()) {
+                m.setChatId(String.valueOf(chatId));
+            }
+            m.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(m);
+        }
+        if(messages.isEmpty()){
+            SendMessage message = new SendMessage();
+            message.setChatId(String.valueOf(chatId));
+            message.setText("Nothing to show");
+            message.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(message);
+        }
+        return result;
+    }
+    public SendMessage getCommitsByMRIidAuthorEmailInputResponse(Long chatId){
+        SendMessage message = new SendMessage();
+        message.setReplyMarkup(new ReplyKeyboardRemove(true));
+        message.setChatId(String.valueOf(chatId));
+        message.setText("Send me the email of author whose commits you want to get");
+        return message;
+    }
+    @SuppressWarnings("all")
+    public List<SendMessage> getCommitsByMRIidAndFilterResponse(Long chatId, int iid, String authorEmail){
+        List<SendMessage> result = new ArrayList<>();
+        SendMessage title = new SendMessage();
+        title.setChatId(String.valueOf(chatId));
+        title.setText("Commits By Merge Request Iid And Filter");
+        result.add(title);
+        List<SendMessage> messages = messageConstructor.getCommitsByMRIidAndFilter(iid, authorEmail);
+        for (SendMessage m : messages) {
+            if (m.getChatId() == null || m.getChatId().isBlank()) {
+                m.setChatId(String.valueOf(chatId));
+            }
+            m.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(m);
+        }
+        if(messages.isEmpty()){
+            SendMessage message = new SendMessage();
+            message.setChatId(String.valueOf(chatId));
+            message.setText("Nothing to show");
+            message.setReplyMarkup(new ReplyKeyboardRemove(true));
+            result.add(message);
+        }
+        return result;
     }
 }

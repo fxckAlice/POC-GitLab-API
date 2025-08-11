@@ -93,6 +93,9 @@ public class GitLabApiClient {
         );
     }
     public String getCommitsByBranchNameAndFilter(String branchName, String authorEmail) throws HttpClientErrorException{
+        if ((authorEmail == null || authorEmail.isEmpty()) && (branchName == null || branchName.isEmpty())) {
+            throw new IllegalArgumentException("At least one filter must be specified.");
+        }
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/commits/branch")
@@ -105,11 +108,14 @@ public class GitLabApiClient {
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/commits/mr/all")
-                .queryParam("iid", iid)
+                .queryParam("mr_iid", iid)
                 .toUriString(), headers
         );
     }
     public String getCommitsByMRIidAndFilter(long iid, String authorEmail) throws HttpClientErrorException{
+        if ((authorEmail == null || authorEmail.isEmpty()) && (iid == 0)) {
+            throw new IllegalArgumentException("At least one filter must be specified.");
+        }
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + token);
         return fetch(UriComponentsBuilder.fromUriString(protocol + host + "/gateway/commits/mr")

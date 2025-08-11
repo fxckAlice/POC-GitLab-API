@@ -79,6 +79,14 @@ public class MessageConstructor {
                 "\n\nName:    \t<a href=\"" + branch.get("webUrl").asText() + "\">" + branch.get("name").asText() + "</a>" +
                 "\nLast Commit:    \t<a href=\"" + branch.get("lastCommitUrl").asText() + "\">" + branch.get("lastCommitSha").asText() + "</a>";
     }
+    private String constructCommit(JsonNode commit, int i){
+        return "#" + (i + 1) +
+                "\n\nID:    \t<a href=\"" + commit.get("webUrl").asText() + "\">" + commit.get("shortId").asText() + "</a>" +
+                "\nAuthor:    \t<a href=\"" + commit.get("authorUrl").asText() + "\">" + commit.get("authorEmail").asText() + "</a>" +
+                "\nCommit Message:    \t" + commit.get("commitMessage").asText() +
+                "\nTime Taken:    \t" + constructTime(Duration.parse(commit.get("timeTaken").asText())) +
+                "\nCreated:    \t" + constructTime(OffsetDateTime.parse(commit.get("createdAt").asText()));
+    }
     public List<SendMessage> getMembersAll(){
         List<SendMessage> messages = new ArrayList<>();
         try{
@@ -209,5 +217,110 @@ public class MessageConstructor {
                     e.getMessage());
         }
         return message;
+    }
+    public List<SendMessage> getCommitsByBranchNameAll(String branchName){
+        List<SendMessage> messages = new ArrayList<>();
+        try {
+            JsonNode commits = parseJson(gitLabApiClient.getCommitsByBranchName(branchName));
+            for (int i = 0; i < commits.size(); i++) {
+                SendMessage message = new SendMessage();
+                message.setParseMode("HTML");
+                message.setText(constructCommit(commits.get(i), i));
+                messages.add(message);
+            }
+        }
+        catch (HttpClientErrorException.BadRequest e){
+            SendMessage message = new SendMessage();
+            message.setText("Wrong branch name. Please, try again.");
+            messages.add(message);
+        }
+        catch (HttpClientErrorException e){
+            SendMessage message = new SendMessage();
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+            messages.add(message);
+        }
+        return messages;
+    }
+    public List<SendMessage> getCommitsByBranchNameAndFilter(String branchName, String email){
+        List<SendMessage> messages = new ArrayList<>();
+        try {
+            JsonNode commits = parseJson(gitLabApiClient.getCommitsByBranchNameAndFilter(branchName, email));
+            for (int i = 0; i < commits.size(); i++) {
+                SendMessage message = new SendMessage();
+                message.setParseMode("HTML");
+                message.setText(constructCommit(commits.get(i), i));
+                messages.add(message);
+            }
+        }
+        catch (IllegalArgumentException e){
+            SendMessage message = new SendMessage();
+            message.setText("At least one filter must be specified.");
+            messages.add(message);
+        }
+        catch (HttpClientErrorException.BadRequest e){
+            SendMessage message = new SendMessage();
+            message.setText("Nothing to show.");
+            messages.add(message);
+        }
+        catch (HttpClientErrorException e){
+            SendMessage message = new SendMessage();
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+            messages.add(message);
+        }
+        return messages;
+    }
+    public List<SendMessage> getCommitsByMRIidAll(int iid){
+        List<SendMessage> messages = new ArrayList<>();
+        try {
+            JsonNode commits = parseJson(gitLabApiClient.getCommitsByMRIid(iid));
+            for (int i = 0; i < commits.size(); i++) {
+                SendMessage message = new SendMessage();
+                message.setParseMode("HTML");
+                message.setText(constructCommit(commits.get(i), i));
+                messages.add(message);
+            }
+        }
+        catch (HttpClientErrorException.BadRequest e){
+            SendMessage message = new SendMessage();
+            message.setText("Wrong merge request id. Please, try again.");
+        }
+        catch (HttpClientErrorException e){
+            SendMessage message = new SendMessage();
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+            messages.add(message);
+        }
+        return messages;
+    }
+    public List<SendMessage> getCommitsByMRIidAndFilter(int iid, String email){
+        List<SendMessage> messages = new ArrayList<>();
+        try {
+            JsonNode commits = parseJson(gitLabApiClient.getCommitsByMRIidAndFilter(iid, email));
+            for (int i = 0; i < commits.size(); i++) {
+                SendMessage message = new SendMessage();
+                message.setParseMode("HTML");
+                message.setText(constructCommit(commits.get(i), i));
+                messages.add(message);
+            }
+        }
+        catch (IllegalArgumentException e){
+            SendMessage message = new SendMessage();
+            message.setText("At least one filter must be specified.");
+            messages.add(message);
+        }
+        catch (HttpClientErrorException.BadRequest e){
+            SendMessage message = new SendMessage();
+            message.setText("Nothing to show.");
+            messages.add(message);
+        }
+        catch (HttpClientErrorException e){
+            SendMessage message = new SendMessage();
+            message.setText("Something went wrong. Please, try again later: \n" +
+                    e.getMessage());
+            messages.add(message);
+        }
+        return messages;
     }
 }
